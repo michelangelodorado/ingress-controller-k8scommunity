@@ -661,55 +661,96 @@ webhooks:
     resources:
     - ingresses
   sideEffects: None
-  ---
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: demo
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app: demo
-    template:
-      metadata:
-        labels:
-          app: demo
-      spec:
-        containers:
-        - name: demo
-          image: httpd
-          ports:
-          - containerPort: 80
-  ---
-  apiVersion: v1
-  kind: Service
-  metadata:
-    name: demo
-  spec:
-    selector:
-      app: demo
-    ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 80
-    type: ClusterIP
-  ---
-  apiVersion: networking.k8s.io/v1
-  kind: Ingress
-  metadata:
-    name: demo-ingress
-    annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: /
-  spec:
-    ingressClassName: nginx
-    rules:
-    - http:
-        paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: demo
-              port:
-                number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cafe-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /tea
+        pathType: Prefix
+        backend:
+          service:
+            name: tea-svc
+            port:
+              number: 80
+      - path: /coffee
+        pathType: Prefix
+        backend:
+          service:
+            name: coffee-svc
+            port:
+              number: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coffee
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: coffee
+  template:
+    metadata:
+      labels:
+        app: coffee
+    spec:
+      containers:
+      - name: coffee
+        image: nginxdemos/hello:plain-text
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coffee-svc
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: coffee
+  clusterIP: None
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tea
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: tea 
+  template:
+    metadata:
+      labels:
+        app: tea 
+    spec:
+      containers:
+      - name: tea 
+        image: nginxdemos/hello:plain-text
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tea-svc
+  labels:
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: tea
+  clusterIP: None
